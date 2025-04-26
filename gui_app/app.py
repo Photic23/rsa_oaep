@@ -51,7 +51,7 @@ class RSA_OAEP_App:
         ttk.Label(self.keygen_frame, text="Key Size:").grid(row=0, column=0, sticky=tk.W, pady=10)
         self.key_size_var = tk.StringVar(value="2048")
         key_size_combo = ttk.Combobox(self.keygen_frame, textvariable=self.key_size_var, state="readonly")
-        key_size_combo['values'] = ('1024', '2048', '3072', '4096')
+        key_size_combo['values'] = ('2048')
         key_size_combo.grid(row=0, column=1, sticky=tk.W, padx=5)
         
         # Output directory
