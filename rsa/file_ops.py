@@ -1,109 +1,83 @@
-import random
-import math
 import os
 import struct
+from oaep import oaep_encrypt, oaep_decrypt
+from .rsa import load_key_from_file
 
-# RSA Key Generation Functions
-def is_prime(n, k=40):
-    """Miller-Rabin primality test"""
-    if n == 2 or n == 3:
-        return True
-    if n <= 1 or n % 2 == 0:
-        return False
+def encrypt_file(input_file, output_file, key_file):
+    """Encrypt a file using RSA-OAEP"""
+    public_key = load_key_from_file(key_file)
+    n, e = public_key
     
-    # Write n as 2^r * d + 1
-    r, d = 0, n - 1
-    while d % 2 == 0:
-        r += 1
-        d //= 2
+    # Calculate maximum message size in bytes
+    block_size = (n.bit_length() // 8) - 2 * 32 - 2  # 32 is the SHA-256 digest size in bytes
     
-    # Witness loop
-    for _ in range(k):
-        a = random.randint(2, n - 2)
-        x = pow(a, d, n)
-        if x == 1 or x == n - 1:
-            continue
-        for _ in range(r - 1):
-            x = pow(x, 2, n)
-            if x == n - 1:
+    # Get the original file extension
+    original_extension = os.path.splitext(input_file)[1].lower()
+    
+    with open(input_file, 'rb') as f_in, open(output_file, 'wb') as f_out:
+        # First write the original extension (up to 10 bytes, padded with spaces)
+        # Format: [length of extension (1 byte)][extension (up to 10 bytes)]
+        ext_bytes = original_extension.encode('utf-8')
+        ext_length = min(len(ext_bytes), 10)
+        f_out.write(bytes([ext_length]))
+        f_out.write(ext_bytes[:ext_length])
+        # Pad if necessary
+        if ext_length < 10:
+            f_out.write(b' ' * (10 - ext_length))
+        
+        # Now encrypt and write the actual file data
+        while True:
+            block = f_in.read(block_size)
+            if not block:
                 break
-        else:
-            return False
-    return True
+            
+            encrypted_block = oaep_encrypt(block, public_key)
+            
+            # Write the length of the encrypted block followed by the block itself
+            f_out.write(struct.pack('>I', len(encrypted_block)))
+            f_out.write(encrypted_block)
 
-def generate_prime(bits):
-    """Generate a prime number with specified bit length"""
-    while True:
-        # Generate a random odd number with specified bit length
-        p = random.getrandbits(bits)
-        p |= (1 << bits - 1) | 1  # Set the highest and lowest bit
-        if is_prime(p):
-            return p
-
-def extended_gcd(a, b):
-    """Extended Euclidean Algorithm"""
-    if a == 0:
-        return b, 0, 1
-    else:
-        gcd, x, y = extended_gcd(b % a, a)
-        return gcd, y - (b // a) * x, x
-
-def mod_inverse(e, phi):
-    """Find modular multiplicative inverse"""
-    gcd, x, y = extended_gcd(e, phi)
-    if gcd != 1:
-        raise ValueError("Modular inverse does not exist")
-    else:
-        return (x % phi + phi) % phi
-
-def generate_keypair(bits=2048):
-    """Generate RSA key pair"""
-    # Generate two prime numbers p and q
-    p = generate_prime(bits // 2)
-    q = generate_prime(bits // 2)
-    
-    n = p * q  # Modulus
-    phi = (p - 1) * (q - 1)  # Euler's totient function
-    
-    # Choose public exponent e
-    e = 65537  # Common value for e
-    
-    # Calculate private exponent d
-    d = mod_inverse(e, phi)
-    
-    # Public key: (n, e), Private key: (n, d), also return p, q
-    return (n, e), (n, d), p, q
-
-# Key Serialization
-def save_key_to_file(key, filename):
-    """Save RSA key to file in hexadecimal format"""
-    if len(key) == 2:
-        # Regular key (n, e/d)
-        n, x = key
-        key_str = f"{n:x}\n{x:x}"
-    elif len(key) == 4:
-        # Full private key (n, d, p, q)
-        n, d, p, q = key
-        key_str = f"{n:x}\n{d:x}\n{p:x}\n{q:x}"
-    
-    with open(filename, 'w') as f:
-        f.write(key_str)
-
-def load_key_from_file(filename):
-    """Load RSA key from file"""
-    with open(filename, 'r') as f:
-        lines = f.read().strip().split('\n')
-    
-    if len(lines) == 2:
-        n = int(lines[0], 16)
-        x = int(lines[1], 16)
-        return (n, x)
-    elif len(lines) == 4:
-        n = int(lines[0], 16)
-        d = int(lines[1], 16)
-        p = int(lines[2], 16)
-        q = int(lines[3], 16)
-        # For decryption, we only need n and d
-        return (n, d)
-    else:
-        raise ValueError("Invalid key file format")
+def decrypt_file(input_file, output_file, key_file):
+    """Decrypt a file using RSA-OAEP"""
+    try:
+        private_key = load_key_from_file(key_file)
+        
+        with open(input_file, 'rb') as f_in:
+            # Read the extension information
+            ext_length = f_in.read(1)[0]
+            ext_bytes = f_in.read(10)
+            original_extension = ext_bytes[:ext_length].decode('utf-8')
+            
+            # Check if we need to apply the original extension to the output file
+            base_output = os.path.splitext(output_file)[0]
+            if original_extension and not output_file.lower().endswith(original_extension.lower()):
+                output_file = base_output + original_extension
+                print(f"Restoring original extension: {original_extension}")
+                print(f"Output file renamed to: {output_file}")
+            
+            with open(output_file, 'wb') as f_out:
+                while True:
+                    # Read the length of the encrypted block
+                    length_bytes = f_in.read(4)
+                    if not length_bytes or len(length_bytes) < 4:
+                        break
+                    
+                    block_length = struct.unpack('>I', length_bytes)[0]
+                    encrypted_block = f_in.read(block_length)
+                    
+                    if len(encrypted_block) != block_length:
+                        raise ValueError("Incomplete encrypted block read")
+                    
+                    decrypted_block = oaep_decrypt(encrypted_block, private_key)
+                    f_out.write(decrypted_block)
+        
+        return output_file  # Return the possibly modified output filename
+                
+    except Exception as e:
+        # Delete the output file if decryption fails
+        try:
+            if os.path.exists(output_file):
+                os.remove(output_file)
+        except:
+            pass
+        raise e
