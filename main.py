@@ -1,5 +1,5 @@
 import tkinter as tk
-from rsa_oaep.gui_app import RSA_OAEP_App
+from gui_app import RSA_OAEP_App
 
 def main():
     """Main entry point for the application"""
