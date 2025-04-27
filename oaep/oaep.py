@@ -108,7 +108,7 @@ def oaep_decrypt(ciphertext, key, label=b""):
     DB = bytes(a ^ b for a, b in zip(maskedDB, dbMask))
     
     # Calculate label hash using SHA-256
-    hasher = sha256_new()
+    hasher = sha256.new()
     hasher.update(label)
     lhash = hasher.digest()
     
