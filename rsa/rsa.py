@@ -3,7 +3,7 @@ import math
 import os
 import struct
 
-# RSA Key Generation Functions
+# RSA Key Generation
 def is_prime(n, k=40):
     """Miller-Rabin primality test"""
     if n == 2 or n == 3:
