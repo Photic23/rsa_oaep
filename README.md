@@ -1,3 +1,10 @@
+# Tugas Pemrograman RSA-OAEP
+
+## Anggota Kelompok 8
+* Naufal Mahdy Hanif - 2206082335
+* Mika Ahmad Al Husseini - 2206826476
+* Henry Soedibjo - 2206827762
+
 # Cara Pakai App-nya
 
 ## Menjalankan app
