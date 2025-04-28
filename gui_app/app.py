@@ -200,14 +200,14 @@ class RSA_OAEP_App:
     def do_generate_keys(self, key_size, output_dir, key_prefix):
         try:
             # Generate key pair
-            public_key, private_key, p, q = generate_keypair(key_size)
+            public_key, private_key = generate_keypair(key_size)
             
             # Save keys to files
             public_key_file = os.path.join(output_dir, f"{key_prefix}_public.txt")
             private_key_file = os.path.join(output_dir, f"{key_prefix}_private.txt")
             
             save_key_to_file(public_key, public_key_file)
-            save_key_to_file((private_key[0], private_key[1], p, q), private_key_file)
+            save_key_to_file(private_key, private_key_file)
             
             # Stop progress bar
             self.keygen_progress.stop()

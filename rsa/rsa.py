@@ -1,7 +1,4 @@
 import random
-import math
-import os
-import struct
 
 # RSA Key Generation Functions
 def is_prime(n, k=40):
@@ -72,19 +69,14 @@ def generate_keypair(bits=2048):
     d = mod_inverse(e, phi)
     
     # Public key: (n, e), Private key: (n, d), also return p, q
-    return (n, e), (n, d), p, q
+    return (n, e), (n, d)
 
 # Key Serialization
 def save_key_to_file(key, filename):
     """Save RSA key to file in hexadecimal format"""
-    if len(key) == 2:
-        # Regular key (n, e/d)
-        n, x = key
-        key_str = f"{n:x}\n{x:x}"
-    elif len(key) == 4:
-        # Full private key (n, d, p, q)
-        n, d, p, q = key
-        key_str = f"{n:x}\n{d:x}\n{p:x}\n{q:x}"
+    # Regular key (n, e or d)
+    n, x = key
+    key_str = f"{n:x}\n{x:x}"
     
     with open(filename, 'w') as f:
         f.write(key_str)
@@ -95,15 +87,9 @@ def load_key_from_file(filename):
         lines = f.read().strip().split('\n')
     
     if len(lines) == 2:
+        # Regular key (n, e or d)
         n = int(lines[0], 16)
         x = int(lines[1], 16)
         return (n, x)
-    elif len(lines) == 4:
-        n = int(lines[0], 16)
-        d = int(lines[1], 16)
-        p = int(lines[2], 16)
-        q = int(lines[3], 16)
-        # For decryption, we only need n and d
-        return (n, d)
     else:
         raise ValueError("Invalid key file format")
