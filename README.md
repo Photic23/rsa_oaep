@@ -1,3 +1,10 @@
+# Tugas Pemrograman RSA-OAEP
+
+## Anggota Kelompok 8
+* Naufal Mahdy Hanif - 2206082335
+* Mika Ahmad Al Husseini - 2206826476
+* Henry Soedibjo - 2206827762
+
 # Cara Pakai App-nya
 
 ## Menjalankan app
@@ -10,6 +17,7 @@
 * Pilih directory yang ingin dijadikan tempat dari keypair
 * Masukkan prefix dari keypair, setelah prefix program akan memberikan keterangan mana yang private dan public key
 * Tekan generate dan keypair akan tersimpan di directory yang diinginkan
+* Keypair akan disimpan dalam heksadesimal. Baris pertama merupakan `n` dan baris kedua merupakan `e` untuk public key atau `d` untuk private key.
 
 ## Encrypt File
 * Pastikan sudah memiliki public key dari keypair yang akan digunakan

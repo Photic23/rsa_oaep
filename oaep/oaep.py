@@ -2,8 +2,9 @@ import os
 import sha256
 
 def mgf1(seed, length):
-    """Mask Generation Function based on SHA-256"""
-    hlen = 32  # SHA-256 digest size is always 32 bytes
+    """Fungsi Mask Generation Function berbasis SHA-256
+    Source: https://en.wikipedia.org/wiki/Mask_generation_function"""
+    hlen = 32  # Digest size untuk SHA-256 
     if length > (2**32) * hlen:
         raise ValueError("Mask too long")
     
@@ -19,104 +20,104 @@ def mgf1(seed, length):
     return T[:length]
 
 def oaep_encrypt(message, key, label=b""):
-    """RSA-OAEP Encryption using SHA-256"""
+    """Fungsi enkripsi RSA-OAEP menggunakan SHA-256
+    Source: https://en.wikipedia.org/wiki/Optimal_asymmetric_encryption_padding#Encoding"""
     n, e = key
-    k = (n.bit_length() + 7) // 8  # Length of the RSA modulus in bytes
-    
-    # SHA-256 digest size is always 32 bytes
-    hlen = 32
+    k = (n.bit_length() + 7) // 8  # Panjang modulus RSA dalam bytes
+
+    hlen = 32 # Digest size untuk SHA-256 
     mlen = len(message)
     
-    # Check if message is too long
+    # Periksa panjang pesan
     if mlen > k - 2 * hlen - 2:
         raise ValueError("Message too long")
     
-    # Calculate label hash using SHA-256
+    # Hash label menggunakan SHA-256
     hasher = sha256.new()
     hasher.update(label)
     lhash = hasher.digest()
     
-    # Create padded message (DB = lHash || PS || 0x01 || M)
+    # Buat pesan yang dipadding (DB = lHash || PS || 0x01 || M)
     PS = b'\x00' * (k - mlen - 2 * hlen - 2)
     DB = lhash + PS + b'\x01' + message ##
     
-    # Generate random seed
+    # Generate seed random
     seed = os.urandom(hlen)
     
-    # Calculate mask for DB using seed
+    # Menggunakan mgf1 untuk generate mask db
     dbMask = mgf1(seed, k - hlen - 1)
     
-    # Calculate masked DB
+    # Mask DB dengan dbMask (maskedDB = DB XOR dbMask)
     maskedDB = bytes(a ^ b for a, b in zip(DB, dbMask))
     
-    # Calculate mask for seed using masked DB
+    # Menggunakan mgf1 untuk generate mask seed
     seedMask = mgf1(maskedDB, hlen)
     
-    # Calculate masked seed
+    # Mask seed dengan dbMask (maskedSeed = seed XOR seedMask)
     maskedSeed = bytes(a ^ b for a, b in zip(seed, seedMask))
     
-    # Construct encoded message (EM = 0x00 || maskedSeed || maskedDB)
+    # Membuat encoded message (EM = 0x00 || maskedSeed || maskedDB)
     EM = b'\x00' + maskedSeed + maskedDB
     
-    # Convert to integer and apply RSA encryption
+    # Ubah ke int dan lakukan enkripsi RSA
     m_int = int.from_bytes(EM, byteorder='big')
     c_int = pow(m_int, e, n)
     
-    # Convert ciphertext to bytes
+    # Ubah ciphertext ke bytes
     ciphertext = c_int.to_bytes(k, byteorder='big')
     
     return ciphertext
 
 def oaep_decrypt(ciphertext, key, label=b""):
-    """RSA-OAEP Decryption using SHA-256"""
+    """RSA-OAEP Decryption using SHA-256
+    Source: https://en.wikipedia.org/wiki/Optimal_asymmetric_encryption_padding#Decoding"""
     n, d = key
-    k = (n.bit_length() + 7) // 8  # Length of the RSA modulus in bytes
+    k = (n.bit_length() + 7) // 8  # Panjang modulus RSA dalam bytes
     
-    # SHA-256 digest size is always 32 bytes
-    hlen = 32
+    hlen = 32 # Digest size untuk SHA-256 
     
-    # Check ciphertext length
+    # Periksa panjang ciphertext
     if len(ciphertext) != k:
         raise ValueError("Decryption error: Invalid ciphertext length")
     
-    # Convert ciphertext to integer and apply RSA decryption
+    # Ubah ke int dan lakukan dekripsi RSA
     c_int = int.from_bytes(ciphertext, byteorder='big')
     m_int = pow(c_int, d, n)
     
-    # Convert back to bytes with proper padding
+    # Ubah kembali ke bytes
     EM = m_int.to_bytes(k, byteorder='big')
     
-    # Separate components
+    # Memisahkan komponen
     first_byte = EM[0]
     maskedSeed = EM[1:1+hlen]
     maskedDB = EM[1+hlen:]
     
-    # Verify first byte
+    # Periksa byte pertama
     if first_byte != 0:
         raise ValueError("Decryption error: Invalid padding")
-    
-    # Calculate seed mask
+        
+    # Menggunakan mgf1 untuk generate mask seed
     seedMask = mgf1(maskedDB, hlen)
     
-    # Recover seed
+    # Recover seed (seed = maskedSeed XOR seedMask)
     seed = bytes(a ^ b for a, b in zip(maskedSeed, seedMask))
     
-    # Calculate DB mask
+    # Menggunakan mgf1 untuk generate mask db
     dbMask = mgf1(seed, k - hlen - 1)
     
-    # Recover DB
+    # Recover DB (DB = maskedDB XOR dbMask)
     DB = bytes(a ^ b for a, b in zip(maskedDB, dbMask))
     
-    # Calculate label hash using SHA-256
+    # Hash label menggunakan SHA-256
     hasher = sha256.new()
     hasher.update(label)
     lhash = hasher.digest()
     
-    # Verify label hash
+    # Periksa label hash
     if not DB.startswith(lhash):
         raise ValueError("Decryption error: Invalid label hash")
     
-    # Find message boundary
+    # Cari batasan pesan
     i = hlen
     while i < len(DB):
         if DB[i] == 0:
@@ -127,7 +128,7 @@ def oaep_decrypt(ciphertext, key, label=b""):
         else:
             raise ValueError("Decryption error: Invalid padding")
     
-    # Extract message
+    # Ekstrak pesan setelah byte 0x01
     message = DB[i:]
     
     return message

@@ -2,10 +2,7 @@ import tkinter as tk
 from gui_app import RSA_OAEP_App
 
 def main():
-    """Main entry point for the application"""
-    # Print a message about using custom SHA-256 implementation
-    print("Using custom SHA-256 implementation for RSA-OAEP")
-    
+    """Main entry point for the application"""    
     # Start the GUI application
     root = tk.Tk()
     app = RSA_OAEP_App(root)
