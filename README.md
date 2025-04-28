@@ -10,6 +10,7 @@
 * Pilih directory yang ingin dijadikan tempat dari keypair
 * Masukkan prefix dari keypair, setelah prefix program akan memberikan keterangan mana yang private dan public key
 * Tekan generate dan keypair akan tersimpan di directory yang diinginkan
+* Keypair akan disimpan dalam heksadesimal. Baris pertama merupakan `n` dan baris kedua merupakan `e` untuk public key atau `d` untuk private key.
 
 ## Encrypt File
 * Pastikan sudah memiliki public key dari keypair yang akan digunakan
