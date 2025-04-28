@@ -68,7 +68,7 @@ def generate_keypair(bits=2048):
     # Calculate private exponent d
     d = mod_inverse(e, phi)
     
-    # Public key: (n, e), Private key: (n, d), also return p, q
+    # Public key: (n, e), Private key: (n, d)
     return (n, e), (n, d)
 
 # Key Serialization
