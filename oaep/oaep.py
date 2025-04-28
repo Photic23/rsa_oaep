@@ -38,7 +38,7 @@ def oaep_encrypt(message, key, label=b""):
     
     # Create padded message (DB = lHash || PS || 0x01 || M)
     PS = b'\x00' * (k - mlen - 2 * hlen - 2)
-    DB = lhash + PS + b'\x01' + message
+    DB = lhash + PS + b'\x01' + message ##
     
     # Generate random seed
     seed = os.urandom(hlen)
