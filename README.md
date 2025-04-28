@@ -17,7 +17,7 @@
 * Pilih directory yang ingin dijadikan tempat dari keypair
 * Masukkan prefix dari keypair, setelah prefix program akan memberikan keterangan mana yang private dan public key
 * Tekan generate dan keypair akan tersimpan di directory yang diinginkan
-* Keypair akan disimpan dalam heksadesimal. Baris pertama merupakan `n` dan baris kedua merupakan `e` untuk public key atau `d` untuk private key.
+* Keypair disimpan dalam bentuk hexadecimal, baris pertama 'n' baris kedua e
 
 ## Encrypt File
 * Pastikan sudah memiliki public key dari keypair yang akan digunakan
@@ -34,3 +34,31 @@
 * Pilih private key yang akan digunakan pada 'Private Key File' 
 * Pilih directory yang akan digunakan untuk menyimpan hasil dekripsi pada 'Output File', jangan lupa untuk memberikan nama file hasil dekripsi juga
 * Tekan tombol 'Decrypt' dan file akan terdekripsi pada direktori yang dituju
+
+
+## Logic Program
+
+# Generate Keypair
+* Bakal nyari prime number 2048 bits sampai ketemu di 'generate_prime'
+* Generate p dan q, each 1024 bits, terus dapetin modulus n 2048 bits dari p dan q
+* Dapetin phi dari p dan q lalu e-nya 65537 (2^16 + 1)
+* Dapetin d dari mod inverse e terhadap phi
+* Dapetin public key (n, e) dan private key (n, d)
+* Save key yang didapetin dengan basis satu variabel per line
+
+# Encrypt
+* Retrieve n sama e dari public key file
+* Ukuran blok didapatkan dari (n.bit_length() // 8) - 2 * 32 - 2, yang berarti untuk 2048 bits atau 256 bytes, maka size blok adalah 190 bytes
+* Format dari file ditulis dulu di 10 bytes awal, kalau kurang akan dipadding
+
+* Untuk tiap block data:
+* Dilanjut dengan pembuatan data block yang diawali label hash (default kosong), padding, separator \x01, dan block pesan
+* Dilanjut generate mask db menggunakan mfg1 dengna seed random
+* Dilanjut xor data block dengan mask db
+* Dilanjut pembuatan mask seed menggunakan data block yang sudah dimask
+* Dilanjut lagi dengan xor seed dengan mask seed
+* Kemudian didapatkan encoded message dari seed dan data block yang sudah dimasked
+* Lalu diubah encoded message menjadi integer dan dilakukan enkripsi rsa
+* Kemudian dikembalikan lagi menjadi bytes dan di-append ke encrypted file
+
+# Decrypt
