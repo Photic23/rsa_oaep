@@ -62,3 +62,17 @@
 * Kemudian dikembalikan lagi menjadi bytes dan di-append ke encrypted file
 
 # Decrypt
+* Retrieve n dan d dari private key
+* File format diambil dari 10 bytes pertama encrypted file
+
+* Retrieve length dari block lalu melakukan dekripsi pada tiap block:
+* Ubah block ciphertext ke bentuk integer lalu lakukan dekripsi rsa menggunakan d dan n
+* Ubah kembali hasil dekripsi ke bentuk bytes
+* Lalu pisahkan elemen-elemen dalam block yang telah didekripsi (null bytes, seed yang masked, dan data block yang masked)
+* Validasi kalau byte pertama memang null
+* Menggunakan mgf1, generate mask seed menggunakan masked data block
+* Recover seed dengan xor seed yang sudah dimasked dengan mask seed
+* Menggunakan mgf1, generate mask db dengan seed yang telah direcover.
+* Recover data block dengan dengan xor db yang dimasked dengan mask db
+* Ekstrak pesan, yaitu data setelah byte 0x01
+* Append pesan ke hasil dekripsi
