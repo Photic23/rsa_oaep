@@ -1,5 +1,5 @@
 import os
-import sha256
+from sha256 import new
 
 def mgf1(seed, length):
     """Mask Generation Function based on SHA-256"""
@@ -11,7 +11,7 @@ def mgf1(seed, length):
     counter = 0
     while len(T) < length:
         C = counter.to_bytes(4, byteorder='big')
-        hasher = sha256.new()
+        hasher = new()
         hasher.update(seed + C)
         T += hasher.digest()
         counter += 1
@@ -32,7 +32,7 @@ def oaep_encrypt(message, key, label=b""):
         raise ValueError("Message too long")
     
     # Calculate label hash using SHA-256
-    hasher = sha256.new()
+    hasher = new()
     hasher.update(label)
     lhash = hasher.digest()
     
@@ -108,7 +108,7 @@ def oaep_decrypt(ciphertext, key, label=b""):
     DB = bytes(a ^ b for a, b in zip(maskedDB, dbMask))
     
     # Calculate label hash using SHA-256
-    hasher = sha256_new()
+    hasher = new()
     hasher.update(label)
     lhash = hasher.digest()
     
